@@ -5,17 +5,15 @@ import course2.lesson_2_5.exception.EmployeeExistsException;
 import course2.lesson_2_5.exception.EmployeeIsNotFoundException;
 import org.springframework.stereotype.Service;
 
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 
 @Service
 public class EmployeeServiceImpl implements EmployeeService {
 
-    private final Set<Employee> employees;
+    private final Map<String, Employee> employees;
 
     public EmployeeServiceImpl() {
-        employees = new HashSet<>();
+        employees = new LinkedHashMap<>();
     }
 
     @Override
@@ -26,10 +24,12 @@ public class EmployeeServiceImpl implements EmployeeService {
 
     @Override
     public Employee add(Employee employee) {
-        boolean employeeAlreadyExists = !employees.add(employee);
-        if (employeeAlreadyExists) {
+        String key = getKey(employee);
+
+        if (employee.containskey(key)) {
             throw new EmployeeExistsException();
         }
+        employees.put(key, employee);
         return employee;
     }
 
@@ -37,13 +37,13 @@ public class EmployeeServiceImpl implements EmployeeService {
     @Override
     public Employee remove(String firstName, String lastName) {
         Employee newEmployee = new Employee(firstName, lastName);
-      return remove(newEmployee);
+        return remove(newEmployee);
     }
 
     @Override
     public Employee remove(Employee employee) {
-        boolean employeeNotFound = !employees.remove(employee);
-        if (employeeNotFound) {
+        Employee deletedValue = employees.remove(getKey(employee));
+        if (deletedValue == null) {
             throw new EmployeeIsNotFoundException();
         }
         return employee;
@@ -51,22 +51,27 @@ public class EmployeeServiceImpl implements EmployeeService {
 
     @Override
     public Employee find(String firstName, String lastName) {
-        Employee newEmployee = new Employee(firstName, lastName);
-        return find(newEmployee);
-    }
-
-    @Override
-    public Employee find(Employee employee) {
-        boolean employeeNotContains = !employees.contains(employee);
-        if (employeeNotContains) {
+        String key = getKey(firstName, lastName);
+        Employee employee = employees.get(key);
+        if (employee == null) {
             throw new EmployeeIsNotFoundException();
         }
         return employee;
     }
 
+
     @Override
     public Collection<Employee> getAll() {
-        return Set.copyOf(employees);
+        return Set.copyOf(employees.values());
     }
+
+    private String getKey(Employee employee) {
+        return getKey(employee.getFirstName(), employee.getLastName());
+    }
+
+    private String getKey(String firstName, String lastName) {
+        return firstName + lastName;
+    }
+
 
 }
